@@ -40,7 +40,8 @@ are stated plainly. This is the list of what is **proven**, what is **not**, and
   the `wiki-*` majority is gold-by-construction (deterministic), which carries no annotator bias.
 - **Verbatim-SUPPORTED items are "gimmes."** Many `wiki-*` SUPPORTED items are sentences copied verbatim
   from the source — `grounded` should get these. The held-out slice and the hard set exist so the
-  headline isn't carried by gimmes; read the confusion matrix and the hard-set breakdown, not just 87%.
+  headline isn't carried by gimmes — read `agreement_discriminative_pct_x100` (72.94%), the confusion
+  matrix, and the hard-set breakdown, not just the 88.50% overall.
 - **No calibration claim.** GroundTruth measures agreement, not a probabilistic forecast — there is no
   Brier/calibration number to report (N/A for this artifact).
 
