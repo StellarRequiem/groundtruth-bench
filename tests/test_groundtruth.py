@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from groundtruth import (
-    dataset_root, leaf_hash, assert_nfc, build_scorecard, canonical_json,
+    dataset_root, leaf_hash, assert_nfc, nfc, build_scorecard, canonical_json,
     agreement_pct_x100, score_item, write_commitment, verify_dataset,
 )
 from groundtruth.cli import load_dataset
@@ -126,3 +126,15 @@ def test_score_item_shape():
     r = score_item(ITEMS[0])
     assert set(r) == {"id", "verdict", "nums", "terms", "num_hit", "term_hit", "gold", "match", "held_out"}
     assert r["match"] in (0, 1)
+
+
+# ---- cross-version determinism on exotic Unicode (G1 must-fix #5) ----
+def test_exotic_unicode_leaf_is_cross_version_stable():
+    # built from pure escapes: cafe / naive / resume / Beijing / party-popper / Omega / combining-acute.
+    # GOLDEN hash verified IDENTICAL under CPython 3.12.13 AND 3.14.5 — proves the NFC + canonical-JSON
+    # -> sha256 leaf is byte-stable across interpreter minor versions, not just within the pinned one.
+    claim = nfc("café — naïve résumé — 北京 — \U0001f389 — Ω — é")
+    source = nfc("The café served a naïve résumé in 北京 \U0001f389 Ω.")
+    item = {"id": "x-unicode", "schema_version": 1, "claim": claim,
+            "source_texts": [source], "gold": "SUPPORTED", "held_out": False}
+    assert leaf_hash(item) == "3278329caed2e264ce83a695fa5994c2bab5f079585e105e15a4122da1700e5d"

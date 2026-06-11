@@ -1,0 +1,33 @@
+name: ragas-compare
+
+# OPT-IN ONLY — manual dispatch. Runs RAGAS (third-party code) + a metered LLM API INSIDE the disposable
+# GitHub Actions runner, never a developer host. Needs the repo secret ANTHROPIC_API_KEY (the owner adds it).
+# This is the G4 head-to-head baseline; it carries NO weight in the byte-identity/commitment claims.
+on:
+  workflow_dispatch:
+    inputs:
+      sample:
+        description: "How many items to score with RAGAS (metered — keep small)"
+        default: "12"
+
+jobs:
+  ragas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install GroundTruth + RAGAS (third-party — isolated to this runner)
+        run: pip install -e . ragas langchain-anthropic
+      - name: Host-safe sanity (GroundTruth re-run is byte-identical; no API)
+        run: python tools/ragas_compare.py --groundtruth-only
+      - name: RAGAS vs GroundTruth reproducibility (metered)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RAGAS_SAMPLE: ${{ inputs.sample }}
+        run: python tools/ragas_compare.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ragas-compare
+          path: ragas_compare.json
