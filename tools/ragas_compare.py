@@ -49,7 +49,11 @@ def run_ragas_once(items: list[dict]) -> list[float]:
              "retrieved_contexts": it["source_texts"]} for it in items]
     ds = EvaluationDataset.from_list(rows)
     res = evaluate(ds, metrics=[Faithfulness(llm=llm)])
-    return [float(x) for x in res.to_pandas()["faithfulness"].tolist()]
+    df = res.to_pandas()
+    # the faithfulness column name has varied across ragas versions — find it defensively
+    cols = [c for c in df.columns if "faith" in c.lower()]
+    col = cols[0] if cols else "faithfulness"
+    return [float(x) for x in df[col].tolist()]
 
 
 def groundtruth_repro_check(items: list[dict]) -> bool:
