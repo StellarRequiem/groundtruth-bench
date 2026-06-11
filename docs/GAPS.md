@@ -36,8 +36,16 @@ are stated plainly. This is the list of what is **proven**, what is **not**, and
   Anthropic SDK** (`tools/judge_compare.py` + `.github/workflows/judge-compare.yml`, `workflow_dispatch`),
   scoring faithfulness twice on a sample at temp 0 and temp 0.7 and reporting how many item scores change
   on a re-run, beside GroundTruth's byte-identical re-run. It runs **only in the disposable CI runner**
-  (metered API; key is a repo secret), never the host. Numbers are filled in here from the actual run; none
-  are fabricated. *(Result: pending the operator-triggered dispatch.)*
+  (metered API; key is a repo secret), never the host.
+  **Result (claude-haiku-4-5, 12 items, run 2026-06-11): the judge re-ran IDENTICALLY — 0/12 scores
+  changed at temp 0 AND temp 0.7 (mean 0.396 both runs); GroundTruth re-ran byte-identical.** This is an
+  honest "no" to the hypothesis that an LLM judge gives different numbers on re-run: a single-shot coarse
+  0–1 score is sharply peaked and was stable. RAGAS's documented non-determinism comes from its multi-step
+  *claim-decomposition* (an LLM generation step), which this single-shot proxy does not replicate — so the
+  live result UNDER-represents RAGAS, and we do not claim "the judge varies." The real, measured contrast
+  is the one that holds: GroundTruth's reproducibility is **guaranteed by construction + cryptographically
+  committed + offline + free**, whereas the judge's stability is **incidental, uncommitted, online, and
+  metered** (and not guaranteed across finer scores / other models / version or model updates / time).
 - **Gold for `hard-*` items is single-annotator.** No inter-annotator agreement (Cohen's κ) is claimed;
   the `wiki-*` majority is gold-by-construction (deterministic), which carries no annotator bias.
 - **Verbatim-SUPPORTED items are "gimmes."** Many `wiki-*` SUPPORTED items are sentences copied verbatim

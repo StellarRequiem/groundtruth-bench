@@ -1,0 +1,17 @@
+{
+  "n": 12,
+  "judge_model": "claude-haiku-4-5",
+  "temp_0": {
+    "run1_mean": 0.3958,
+    "run2_mean": 0.3958,
+    "items_changed": 0,
+    "max_item_delta": 0.0
+  },
+  "temp_0_7": {
+    "run1_mean": 0.3958,
+    "run2_mean": 0.3958,
+    "items_changed": 0,
+    "max_item_delta": 0.0
+  },
+  "groundtruth_rerun_byte_identical": true
+}

@@ -1,10 +1,10 @@
 # groundtruth-bench — citation faithfulness you can *re-run to the same hash*
 
 > Faithfulness evals are the trust gate for RAG / deep-research agents — but the standard ones
-> (RAGAS, ARES) are LLM-as-judge, so re-running them gives a **different number**, and their test
-> sets are static, so they **leak into training**. groundtruth-bench fixes both: the dataset is
-> **cryptographically committed** (sources snapshotted + hashed, no live fetch) and every score
-> **re-runs to a byte-identical hash**.
+> (RAGAS, ARES) are **LLM-as-judge** (online, metered, and uncommittable), and their test sets are
+> static, so they **leak into training**. groundtruth-bench is different where it counts: the dataset
+> is **cryptographically committed** (sources snapshotted + hashed, no live fetch) and every score
+> **re-runs to a byte-identical hash by construction** — offline and free.
 
 It is the layer *above* [`grounded`](https://github.com/StellarRequiem/grounded) (the deterministic,
 zero-dependency, offline citation scorer): a committed dataset of `(claim, snapshotted-source, gold
@@ -16,12 +16,15 @@ Commitment + tamper-evidence reuse [`verity-core`](https://github.com/StellarReq
 ## Why it's different
 | | RAGAS / ARES (LLM-judge) | groundtruth-bench |
 |---|---|---|
-| Re-run → same number? | ✗ (judge variance) | ✓ **byte-identical** |
-| Test set committed / leak-proof? | ✗ static, contaminable | ✓ snapshot + hash commitment |
+| Re-run identical **by construction**? | ✗ not guaranteed (incidental at best) | ✓ **byte-identical, guaranteed** |
+| Test set cryptographically committed? | ✗ static, contaminable | ✓ snapshot + hash commitment |
 | Cost / offline | $ per run, network | $0, offline |
 
-The win is scoped to **reproducibility · commitment · cost** — *not* a claim that lexical grounding
-is more accurate than semantic entailment. The scorecard publishes the gold-agreement either way.
+The win is scoped to **commitment · reproducibility-by-construction · cost** — *not* a claim that
+lexical grounding is more accurate than semantic entailment, and *not* that an LLM judge always gives a
+different number (our live single-shot judge was actually stable on re-run — see below). The point is
+that GroundTruth's reproducibility is **guaranteed + committed**, whereas a judge's is at best
+incidental, online, metered, and uncommittable. The scorecard publishes the gold-agreement either way.
 
 ## Quickstart (clean clone → verify in under a minute)
 ```sh
