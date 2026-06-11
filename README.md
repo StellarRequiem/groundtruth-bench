@@ -81,6 +81,7 @@ faithfulness benchmark you can trust says where the scorer is wrong.
 **G4 (Prove-It)** — survived an independent adversarial pass (empirical, 3 hostile lenses): byte-identity,
 commitment/tamper-detection, collision-safety, and cross-version leaf stability all held; the headline was
 de-gimmed to the honest 72.94% above per the gate. 18 tests, **100% coverage**; cross-OS byte-identity CI.
-The live **RAGAS** reproducibility comparison is an opt-in, isolated CI job ([`ragas-compare.yml`](.github/workflows/ragas-compare.yml));
-see [`docs/GAPS.md`](docs/GAPS.md) for what's proven vs pending. Part of the
-[StellarRequiem](https://github.com/StellarRequiem) verification cluster.
+The live LLM-as-judge reproducibility comparison (RAGAS's design, run directly via the Anthropic SDK —
+RAGAS itself won't pin onto a coherent modern langchain stack) is an opt-in, isolated CI job
+([`judge-compare.yml`](.github/workflows/judge-compare.yml)); see [`docs/GAPS.md`](docs/GAPS.md) for what's
+proven vs pending. Part of the [StellarRequiem](https://github.com/StellarRequiem) verification cluster.

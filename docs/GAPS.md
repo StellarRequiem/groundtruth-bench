@@ -29,13 +29,15 @@ are stated plainly. This is the list of what is **proven**, what is **not**, and
   The "beats RAGAS" claim is scoped strictly to **reproducibility · cost · offline**, never accuracy.
   On semantic contradiction, unit mismatch, negation, and paraphrase recall, `grounded` is wrong — by
   design the benchmark shows this rather than hiding it.
-- **The live RAGAS head-to-head number is pending.** RAGAS is third-party code; per our isolation rule
-  it is **not installed or run on the host**. The comparison harness (`tools/ragas_compare.py` +
-  `.github/workflows/ragas-compare.yml`, `workflow_dispatch`) runs RAGAS **only in the disposable CI
-  runner** and needs an API key the repo owner adds as a secret. Until that operator-triggered run, the
-  RAGAS-side non-determinism is argued **by inspection**: RAGAS faithfulness is an LLM-as-judge metric,
-  so re-running it on identical inputs yields different scores (a published, well-documented property);
-  GroundTruth's byte-identity is the contrast. No RAGAS number is fabricated.
+- **The live LLM-judge head-to-head.** The baseline is an LLM-as-judge faithfulness scorer (RAGAS's
+  design). RAGAS *itself* could not be run: it hard-imports `langchain_community.chat_models.vertexai`
+  (removed in the langchain 0.3 split) and its dependency matrix is unsatisfiable on a modern stack — a
+  reproducibility point in its own right. So the demonstration runs the same mechanism **directly via the
+  Anthropic SDK** (`tools/judge_compare.py` + `.github/workflows/judge-compare.yml`, `workflow_dispatch`),
+  scoring faithfulness twice on a sample at temp 0 and temp 0.7 and reporting how many item scores change
+  on a re-run, beside GroundTruth's byte-identical re-run. It runs **only in the disposable CI runner**
+  (metered API; key is a repo secret), never the host. Numbers are filled in here from the actual run; none
+  are fabricated. *(Result: pending the operator-triggered dispatch.)*
 - **Gold for `hard-*` items is single-annotator.** No inter-annotator agreement (Cohen's κ) is claimed;
   the `wiki-*` majority is gold-by-construction (deterministic), which carries no annotator bias.
 - **Verbatim-SUPPORTED items are "gimmes."** Many `wiki-*` SUPPORTED items are sentences copied verbatim
@@ -50,9 +52,9 @@ are stated plainly. This is the list of what is **proven**, what is **not**, and
   **text** — the text is parsed and compared, never `eval`'d, imported, or executed. Source texts are
   snapshotted at build time; **no network fetch runs in the eval path** (`grounded`'s `fetch.py` is never
   called).
-- **Third-party isolation.** The only third-party code that touches this project is RAGAS, and it is
-  confined to the `workflow_dispatch` CI job — never the developer host (matches the project rule and the
-  mcp-bench precedent).
+- **Third-party isolation.** The metered LLM-judge baseline (a direct Anthropic-SDK call) is confined to
+  the `workflow_dispatch` CI job — never the developer host (matches the project rule and the mcp-bench
+  precedent). The deterministic eval path makes no network calls at all.
 - **Single-writer commitment.** `build` is the only mutating subcommand; the verity `AuditChain`'s lock
   is in-process, so `build` is documented as a single-writer one-shot.
 - **Determinism hazards pinned.** NFC enforced at build (`assert_nfc`); float-free hashed artifacts
