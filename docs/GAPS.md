@@ -7,13 +7,22 @@ are stated plainly. This is the list of what is **proven**, what is **not**, and
 - **Byte-identical re-run.** Two runs of `groundtruth score` produce a byte-for-byte identical
   `scorecard.json`. Proven in CI **across two different machines (ubuntu + macos)** from a clean clone.
 - **Commitment / tamper-evidence.** The dataset commits to a sorted-leaf sha256 root (verity-core
-  `entry_hash`). `verify` recomputes it; any post-commit edit changes the root → exit 1. Tested.
-- **Cross-version determinism.** A golden exotic-Unicode leaf hash (`3278329c…`, with CJK + emoji +
-  Greek + a combining accent) is **identical under CPython 3.12.13 and 3.14.5** — so the property does
-  not even depend on the version pin; the pin is defense-in-depth.
-- **Honest scoring.** `grounded` agreement with gold is **87.00%** (held-out 80%); the hard set is
-  **4/12** and the confusion matrix reports `grounded`'s false-SUPPORTs (gold-UNSUPPORTED scored
-  SUPPORTED = 6). Nothing is curated to flatter the scorer.
+  `entry_hash`). `verify` recomputes it; any post-commit edit to a **committed (eval-relevant) field**
+  changes the root → exit 1. Tested. (Provenance metadata is excluded from the commitment by design —
+  edits to it are not detected; this is stated, not marketed as full tamper-evidence.)
+- **Cross-version determinism — leaf/root only.** A golden exotic-Unicode leaf hash (`3278329c…`, with
+  CJK + emoji + Greek + a combining accent) is **identical under CPython 3.12.13 and 3.14.5**, so the
+  committed-dataset leaf/root is genuinely cross-version stable. **But the SCORECARD is not**:
+  `grounded`'s Unicode-aware `\d` matches more codepoints under Unicode 16 (3.14) than Unicode 15 (3.12),
+  so a claim with a U16-only digit can flip its verdict across minors. **The Python pin is therefore
+  load-bearing for scorecard byte-identity, not defense-in-depth.** (The 3.14 leaf result is proven by a
+  committed golden test verified locally + a dedicated CI golden-leaf job; the package itself pins 3.12.)
+- **Honest scoring (de-gimmed).** `grounded` agreement with gold is **88.50% overall, but that is carried
+  by 115/200 zero-discrimination gimmes** (97 verbatim-substring SUPPORTED + 18 empty-source UNSOURCED).
+  On the **85 discriminative items it is 72.94%** — the honest number, reported as
+  `agreement_discriminative_pct_x100` in the scorecard. The hard set is **4/12**; the confusion matrix
+  reports `grounded`'s false-SUPPORTs (gold-UNSUPPORTED scored SUPPORTED = 5, + 16 WEAK). Nothing is
+  curated to flatter the scorer; the held-out 82.50% is the same construction mix, not a generalization axis.
 
 ## What is NOT proven / claimed
 - **`grounded` is not claimed to be accurate.** It scores *lexical* overlap, not semantic entailment.

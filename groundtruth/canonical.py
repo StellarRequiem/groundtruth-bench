@@ -15,6 +15,7 @@ import unicodedata
 from verity.audit import entry_hash, GENESIS
 
 SCHEMA_VERSION = 1
+VERDICTS = ("SUPPORTED", "WEAK", "UNSUPPORTED", "UNSOURCED")
 
 
 def nfc(s: str) -> str:
@@ -35,12 +36,15 @@ def canonical_item(item: dict) -> dict:
     Only eval-relevant fields are committed — ``provenance`` metadata (url/date) is
     deliberately excluded so a URL going stale never changes the commitment.
     """
+    gold = assert_nfc(item["gold"])  # gold is committed too — guard it like every other string
+    if gold not in VERDICTS:
+        raise ValueError(f"gold {gold!r} is not one of {VERDICTS}")
     return {
         "id": assert_nfc(item["id"]),
         "schema_version": SCHEMA_VERSION,
         "claim": assert_nfc(item["claim"]),
         "source_texts": [assert_nfc(s) for s in item["source_texts"]],
-        "gold": item["gold"],
+        "gold": gold,
         "held_out": bool(item["held_out"]),
     }
 

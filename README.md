@@ -39,7 +39,10 @@ Each dataset item is canonicalized (all-`str` keys, **NFC-normalized**, float-fr
 verity-core's canonical-JSON→sha256 `entry_hash` as a leaf; the **root** = `sha256` of the
 id-sorted leaf hashes (order-independent). `build` records a `dataset_commit` event in an append-only
 verity `AuditChain` **before** scoring (pre-registration), and writes `data/COMMITMENT.txt`. `verify`
-recomputes the root and compares — any post-commit edit to the dataset changes the root.
+recomputes the root and compares — any post-commit edit to a **committed (eval-relevant) field**
+(`id` / `schema_version` / `claim` / `source_texts` / `gold` / `held_out`) changes the root. Provenance
+metadata is deliberately excluded from the commitment, so edits to `provenance` or any non-committed
+field do **not** change the root and are not detected by `verify`.
 
 **Honest limits:** the commitment proves *no edit after commit*, **not** *no cherry-pick before
 commit* — so the corpus + gold are pre-registered and a held-out slice is reported separately. Gold
@@ -49,22 +52,35 @@ scores **lexical overlap**, so a claim that lexically matches but semantically c
 the scorecard's confusion matrix shows it rather than hiding it.
 
 ## Determinism pins (why the bytes match)
-Python minor version pinned (`.python-version` = 3.12); `grounding()` is called directly (never the
-network/cache path); the scorecard is serialized canonically (`sort_keys`, `ensure_ascii`, fixed
-separators, **no floats** — percentages are integers ×100); line endings pinned to LF.
+Python minor version pinned (`.python-version` = 3.12, `requires-python <3.13`); `grounding()` is called
+directly (never the network/cache path); the scorecard is serialized canonically (`sort_keys`,
+`ensure_ascii`, fixed separators, **no floats** — percentages are integers ×100); line endings LF.
+The committed-dataset **leaf/root** hash is genuinely *cross-version* stable (golden exotic-Unicode leaf
+identical on 3.12 + 3.14). The **scorecard** is not version-independent: `grounded`'s Unicode-aware `\d`
+matches more codepoints under Unicode 16 (3.14) than Unicode 15 (3.12), so the Python pin is
+**load-bearing for scorecard byte-identity, not merely defense-in-depth**.
 
 ## What it measures (current corpus)
 A committed **200-item corpus** — real CC-BY-SA Wikipedia extracts (gold set *by construction*; see
 [`docs/RUBRIC.md`](docs/RUBRIC.md) + [`data/NOTICE.md`](data/NOTICE.md)) plus a hand-curated hard set.
-`grounded`'s agreement with gold: **87.00%** overall, **80%** on the held-out slice. It is strong on
-verbatim/lexical faithfulness (SUPPORTED 100/102, UNSOURCED 18/18) — but the hard set is where lexical
-grounding *should* fail, and it does: **4/12**. It false-SUPPORTS semantic contradictions ("the Sun is
-mainly helium"), unit mismatches (Everest "8849 feet"), and debunked myths (Great Wall from the Moon).
-The confusion matrix **reports** this (gold-UNSUPPORTED scored SUPPORTED = 6) rather than hiding it —
-which is the point: a faithfulness benchmark you can trust says where the scorer is wrong.
+
+`grounded`'s agreement with gold is **88.50% overall — but that number is carried by construction.**
+**115 of 200 items (57%) are zero-discrimination** (97 verbatim-substring SUPPORTED + 18 empty-source
+UNSOURCED) that any lexical scorer gets for free. On the **85 discriminative items** (number-swap,
+topic-mismatch, hard set) agreement is **72.94%** — the honest headline. The held-out **82.50%** is the
+same construction mix on a smaller n, **not a generalization slice**. Read `agreement_discriminative_pct_x100`
+in the scorecard, not just the overall number.
+
+Per class: SUPPORTED 100/102, UNSOURCED 18/18 — but UNSUPPORTED recall is weaker (gold-UNSUPPORTED scored
+SUPPORTED = 5, plus 16 WEAK leakage), and the hard set is **4/12**: semantic contradiction ("the Sun is
+mainly helium"), unit mismatch (Everest "8849 feet"), debunked myths (Great Wall from the Moon),
+paraphrase recall — exactly where lexical grounding fails, and the confusion matrix **reports** it. A
+faithfulness benchmark you can trust says where the scorer is wrong.
 
 ## Status
-**G3 (Harden)** — 200-item committed corpus; 16 tests, **99% coverage**; cross-OS byte-identity CI
-(scorecard identical on ubuntu + macos from a clean clone). The live **RAGAS** reproducibility
-comparison lands in **G4 (Prove-It)**. Part of the
+**G4 (Prove-It)** — survived an independent adversarial pass (empirical, 3 hostile lenses): byte-identity,
+commitment/tamper-detection, collision-safety, and cross-version leaf stability all held; the headline was
+de-gimmed to the honest 72.94% above per the gate. 18 tests, **100% coverage**; cross-OS byte-identity CI.
+The live **RAGAS** reproducibility comparison is an opt-in, isolated CI job ([`ragas-compare.yml`](.github/workflows/ragas-compare.yml));
+see [`docs/GAPS.md`](docs/GAPS.md) for what's proven vs pending. Part of the
 [StellarRequiem](https://github.com/StellarRequiem) verification cluster.

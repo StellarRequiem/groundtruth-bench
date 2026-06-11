@@ -18,7 +18,8 @@ def test_cli_build_verify_score(tmp_path):
     assert main(["score", "--dataset", str(DATA), "--commitment", str(commitment), "--out", str(out)]) == 0
     card = json.loads(out.read_text())
     assert card["n_items"] == 200
-    assert card["agreement_pct_x100"] == 8700
+    assert card["agreement_pct_x100"] == 8850
+    assert card["agreement_discriminative_pct_x100"] == 7294
     # the scorecard file ends with a single trailing newline and is canonical (no spaces after separators)
     text = out.read_text()
     assert text.endswith("}\n") and ", " not in text and ": " not in text

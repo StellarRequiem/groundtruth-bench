@@ -47,3 +47,31 @@ jobs:
           ls -R cards
           cmp cards/scorecard-ubuntu-latest/scorecard.json cards/scorecard-macos-latest/scorecard.json
           echo "✓ byte-identical scorecard across ubuntu + macos"
+
+  cross-version-leaf:
+    # The package pins 3.12 (requires-python <3.13), so it can't `pip install` under 3.14. This job
+    # gives the cross-version determinism claim CI standing WITHOUT the package: it installs only
+    # verity-core and recomputes the golden exotic-Unicode leaf under 3.14 — must equal the constant
+    # asserted by the 3.12 test suite. (Unicode 15 vs 16 affects the SCORECARD, not this leaf hash.)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Install verity-core only (no package — it pins 3.12)
+        run: pip install "verity-core @ git+https://github.com/StellarRequiem/verity-core"
+      - name: Golden exotic-Unicode leaf must match the 3.12 constant under 3.14
+        run: |
+          python - <<'PY'
+          import sys, unicodedata
+          from verity.audit import entry_hash, GENESIS
+          assert sys.version_info[:2] == (3, 14), sys.version
+          nfc = lambda s: unicodedata.normalize("NFC", s)
+          item = {"id": "x-unicode", "schema_version": 1,
+                  "claim": nfc("caf\u00e9 \u2014 na\u00efve r\u00e9sum\u00e9 \u2014 \u5317\u4eac \u2014 \U0001f389 \u2014 \u03a9 \u2014 \u00e9"),
+                  "source_texts": [nfc("The caf\u00e9 served a na\u00efve r\u00e9sum\u00e9 in \u5317\u4eac \U0001f389 \u03a9.")],
+                  "gold": "SUPPORTED", "held_out": False}
+          leaf = entry_hash(0, GENESIS, "groundtruth", "dataset_item", item)
+          assert leaf == "3278329caed2e264ce83a695fa5994c2bab5f079585e105e15a4122da1700e5d", leaf
+          print("✓ 3.14 golden leaf matches the 3.12 constant:", leaf)
+          PY

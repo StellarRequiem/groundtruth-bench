@@ -107,13 +107,22 @@ def test_leaf_excludes_provenance():
 def test_dataset_agreement_is_real():
     card = build_scorecard(ITEMS, dataset_root(ITEMS), "3.12")
     assert card["n_items"] == 200                        # the frozen committed corpus
-    assert card["agreement_pct_x100"] == 8700            # 87.00% — deterministic on the committed data
-    assert card["agreement_heldout_pct_x100"] == 8000    # 80.00% on the held-out slice
+    assert card["n_gimme"] == 115 and card["n_discriminative"] == 85
+    assert card["agreement_pct_x100"] == 8850            # 88.50% OVERALL — carried by the gimmes
+    assert card["agreement_discriminative_pct_x100"] == 7294  # 72.94% — the HONEST number (non-gimme items)
+    assert card["agreement_heldout_pct_x100"] == 8250    # 82.50% on the held-out slice
     # grounded's lexical limits are REAL and SHOWN, not curated away: it false-SUPPORTS several
     # genuinely-unsupported claims (semantic contradiction / unit mismatch / debunked myth)
     assert card["confusion"]["UNSUPPORTED"]["SUPPORTED"] >= 5
     assert card["confusion"]["SUPPORTED"]["SUPPORTED"] >= 90
-    assert card["confusion"]["UNSOURCED"]["UNSOURCED"] == card["confusion"]["UNSOURCED"]["UNSOURCED"]  # consistency
+
+
+def test_gold_must_be_a_valid_verdict():
+    from groundtruth.canonical import canonical_item
+    base = {"id": "t", "claim": "x", "source_texts": ["x"], "gold": "SUPPORTED", "held_out": False}
+    canonical_item(base)  # valid
+    with pytest.raises(ValueError):
+        canonical_item({**base, "gold": "BOGUS_LABEL"})  # not in VERDICTS → rejected at commit time
 
 
 def test_shipped_commitment_matches_dataset():
@@ -124,8 +133,8 @@ def test_shipped_commitment_matches_dataset():
 
 def test_score_item_shape():
     r = score_item(ITEMS[0])
-    assert set(r) == {"id", "verdict", "nums", "terms", "num_hit", "term_hit", "gold", "match", "held_out"}
-    assert r["match"] in (0, 1)
+    assert set(r) == {"id", "verdict", "nums", "terms", "num_hit", "term_hit", "gold", "match", "held_out", "gimme"}
+    assert r["match"] in (0, 1) and r["gimme"] in (0, 1)
 
 
 # ---- cross-version determinism on exotic Unicode (G1 must-fix #5) ----

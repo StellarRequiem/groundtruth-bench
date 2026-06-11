@@ -89,6 +89,22 @@ def slug(title: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
 
 
+def title_tokens(title: str) -> list[str]:
+    return [w.lower() for w in re.findall(r"[A-Za-z]{4,}", title) if w.lower() not in {"the", "and", "for"}]
+
+
+def pick_unrelated(fetched: list, i: int) -> dict | None:
+    """An article whose extract does NOT mention this article's title tokens — so the topic-mismatch
+    claim is genuinely unsupported by it (avoids the Jupiter-mentioned-in-Saturn accidental-support bug)."""
+    toks = title_tokens(fetched[i][0])
+    for k in range(1, len(fetched)):
+        cand = fetched[(i + k) % len(fetched)][1]
+        low = cand["extract"].lower()
+        if not any(t in low for t in toks):
+            return cand
+    return None
+
+
 def build() -> list[dict]:
     items: list[dict] = []
     fetched: list[tuple[str, dict]] = []
@@ -115,11 +131,13 @@ def build() -> list[dict]:
         if poisoned:
             items.append({"id": f"wiki-{s}-num", "claim": poisoned, "source_texts": [d["extract"]],
                           "gold": "UNSUPPORTED", "provenance": {**prov, "note": "number swapped to a false value"}})
-        # UNSUPPORTED — topic mismatch: this article's claim vs the NEXT article's source
-        other = fetched[(i + 1) % len(fetched)][1]
-        items.append({"id": f"wiki-{s}-mism", "claim": sents[0], "source_texts": [other["extract"]],
-                      "gold": "UNSUPPORTED",
-                      "provenance": {**prov, "note": f"topic mismatch vs {other['url']}"}})
+        # UNSUPPORTED — topic mismatch: this article's claim vs an UNRELATED article's source
+        # (one that does not mention this article's subject, so it genuinely fails to support).
+        other = pick_unrelated(fetched, i)
+        if other:
+            items.append({"id": f"wiki-{s}-mism", "claim": sents[0], "source_texts": [other["extract"]],
+                          "gold": "UNSUPPORTED",
+                          "provenance": {**prov, "note": f"topic mismatch vs {other['url']}"}})
         # UNSOURCED — real claim, no source (every 3rd article, to keep the class present but minority)
         if i % 3 == 0:
             items.append({"id": f"wiki-{s}-uns", "claim": sents[0], "source_texts": [],
