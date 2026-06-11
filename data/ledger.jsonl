@@ -1,0 +1,1 @@
+{"seq": 0, "prev_hash": "GENESIS", "actor": "groundtruth", "event_type": "dataset_commit", "event_data": {"schema_version": 1, "n_items": 6, "root": "6d16f9c21427d324d9a853119f53e35ed3204e02896decd11dde2aa1fd41d019", "algo": "sha256-sorted-leaves"}, "timestamp": "2026-06-11T06:45:54.113206+00:00", "entry_hash": "bc43e4f437410b8e894a9bb85bb2296d3d65844319431eeae5e54d06eed49abe"}

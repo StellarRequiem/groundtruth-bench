@@ -1,0 +1,49 @@
+name: ci
+
+on: [push, pull_request]
+
+env:
+  PYTHONHASHSEED: "0"   # belt-and-suspenders; grounding() is already seed-independent
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]   # two DIFFERENT machines → byte-identity is the claim
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Guard the pinned Python minor
+        run: python -c "import sys; assert sys.version_info[:2]==(3,12), sys.version"
+      - name: Install (git-pinned grounded + verity-core)
+        run: pip install -e ".[dev]"
+      - name: Assert verity-core is the StellarRequiem package (not the unrelated PyPI Rust pkg)
+        run: python -c "from verity.audit import entry_hash; assert callable(entry_hash)"
+      - name: Unit tests
+        run: pytest -q
+      - name: Build + verify + score (the real demo)
+        run: |
+          groundtruth build
+          groundtruth verify
+          groundtruth score --out scorecard.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: scorecard-${{ matrix.os }}
+          path: scorecard.json
+
+  byte-identity:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: cards
+      - name: Two different runners must produce a byte-identical scorecard
+        run: |
+          ls -R cards
+          cmp cards/scorecard-ubuntu-latest/scorecard.json cards/scorecard-macos-latest/scorecard.json
+          echo "✓ byte-identical scorecard across ubuntu + macos"
