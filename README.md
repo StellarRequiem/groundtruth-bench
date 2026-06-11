@@ -53,8 +53,18 @@ Python minor version pinned (`.python-version` = 3.12); `grounding()` is called 
 network/cache path); the scorecard is serialized canonically (`sort_keys`, `ensure_ascii`, fixed
 separators, **no floats** — percentages are integers ×100); line endings pinned to LF.
 
+## What it measures (current corpus)
+A committed **200-item corpus** — real CC-BY-SA Wikipedia extracts (gold set *by construction*; see
+[`docs/RUBRIC.md`](docs/RUBRIC.md) + [`data/NOTICE.md`](data/NOTICE.md)) plus a hand-curated hard set.
+`grounded`'s agreement with gold: **87.00%** overall, **80%** on the held-out slice. It is strong on
+verbatim/lexical faithfulness (SUPPORTED 100/102, UNSOURCED 18/18) — but the hard set is where lexical
+grounding *should* fail, and it does: **4/12**. It false-SUPPORTS semantic contradictions ("the Sun is
+mainly helium"), unit mismatches (Everest "8849 feet"), and debunked myths (Great Wall from the Moon).
+The confusion matrix **reports** this (gold-UNSUPPORTED scored SUPPORTED = 6) rather than hiding it —
+which is the point: a faithfulness benchmark you can trust says where the scorer is wrong.
+
 ## Status
-**G2 walking skeleton** — `build`/`score`/`verify` work end-to-end on a 6-item real slice (5/6
-agreement; the held-out item agrees). The full ~200–300-item committed corpus + the two-runner
-byte-identity CI + the live RAGAS comparison land in G3/G4. Part of the
+**G3 (Harden)** — 200-item committed corpus; 16 tests, **99% coverage**; cross-OS byte-identity CI
+(scorecard identical on ubuntu + macos from a clean clone). The live **RAGAS** reproducibility
+comparison lands in **G4 (Prove-It)**. Part of the
 [StellarRequiem](https://github.com/StellarRequiem) verification cluster.
